@@ -2,8 +2,11 @@ let alreadyInit = 0
 const PWM_ADD = 0x01
 const MOTOR = 0x02
 const RGB = 0x01
+let yahStrip: neopixel.Strip;
+
 //% weight=10 color=#006400 icon="\uf1b9" block="Tinybit"
 //% groups='["Motors", "Distance Sensor", "Line Reader","Headlights"]'
+
 namespace Tinybit {
     export enum Motors {
         //% blockId="LeftMotor" block="LeftMotor"
@@ -17,6 +20,7 @@ namespace Tinybit {
         forward = 1,
         backward = 2
     }
+
     export enum PingUnit {
         //% block="cm"
         Centimeters,
@@ -46,11 +50,13 @@ namespace Tinybit {
         black
     }
     function setPwmRGB(red: number, green: number, blue: number): void {
+
         let buf = pins.createBuffer(4);
         buf[0] = RGB;
         buf[1] = red;
         buf[2] = green;
         buf[3] = blue;
+
         pins.i2cWriteBuffer(PWM_ADD, buf);
     }
     //% weight=100
@@ -64,6 +70,8 @@ namespace Tinybit {
         speed = Math.round(speed * 2.55)
         let buf = pins.createBuffer(5);
         buf[0] = MOTOR;
+
+
         if (index == Motors.LeftMotor) {
             if (dir == direction.forward) {
                 //buf[1] = 0;
@@ -76,6 +84,7 @@ namespace Tinybit {
                 //buf[2] = 0;
                 //buf[3] = 0;
                 buf[4] = speed;
+
             }
 
         }
@@ -93,6 +102,7 @@ namespace Tinybit {
                 //buf[4] = 0;
             }
         }
+
         else if (index == Motors.BothMotors) {
             if (dir == direction.forward) {
                 buf[1] = speed;
@@ -105,9 +115,12 @@ namespace Tinybit {
                 buf[2] = speed;
                 buf[3] = 0;
                 buf[4] = speed;
+
             }
+
         }
         pins.i2cWriteBuffer(PWM_ADD, buf);
+
     }
     //% weight=98
     //% group="Motors"
@@ -120,7 +133,9 @@ namespace Tinybit {
         buf[2] = 0;
         buf[3] = 0;
         buf[4] = 0;
+
         pins.i2cWriteBuffer(PWM_ADD, buf);
+
     }
 
     //% group="Distance Sensor"
@@ -139,19 +154,27 @@ namespace Tinybit {
         pins.digitalWritePin(DigitalPin.P16, 0);
         // read pulse
         pins.setPull(DigitalPin.P15, PinPullMode.PullUp);
+
         let d = pins.pulseIn(DigitalPin.P15, PulseValue.High, maxCmDistance * 42);
         let dr = Math.round(d / 42);
         console.log("Distance: " + dr);
+
         basic.pause(50)
+
         switch (unit) {
             case PingUnit.Centimeters: return dr;
             default: return dr;
         }
+
     }
+
+
     //% weight=89
     //% group="Line Reader"
     //% blockId=read_Linesensor block=" %Linesensor detects %type"
     //% Linesensor.fieldEditor="gridpicker" Linesensor.fieldOptions.columns=2 
+
+
     export function readlinereadervalue(Line: Linesensor, typeline: linevalue): boolean {
         let LeftLineSensorValue = pins.digitalReadPin(DigitalPin.P13)
         let RightLineSensorValue = pins.digitalReadPin(DigitalPin.P14)
@@ -171,6 +194,7 @@ namespace Tinybit {
             return false
         }
     }
+
     //% weight=87
     //% group="Headlights"
     //% blockId=writeLED block="Set|%led|to|%ledswitch"
@@ -183,6 +207,7 @@ namespace Tinybit {
             pins.digitalWritePin(DigitalPin.P12, ledswitch)
         } else {
             return
+
         }
     }
     //% weight=10
@@ -204,6 +229,19 @@ namespace Tinybit {
             G = 255;
         if (B > 255)
             B = 255;
+
         setPwmRGB(R, G, B);
+
     }
+    //% blockId=Tinybit_RGB_Car_Program block="Smart Leds"
+    //% weight=99
+    //% blockGap=10
+    //% color="#006400"
+    //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    export function RGB_Car_Program(): neopixel.Strip {
+        if (!yahStrip) {
+            yahStrip = neopixel.create(DigitalPin.P12, 2, NeoPixelMode.RGB);
+        }
+        return yahStrip;
+    }  
 }
