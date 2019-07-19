@@ -4,15 +4,18 @@
     "description": "",
     "dependencies": {
         "core": "*",
-        "radio": "*"
+        "radio": "*", 
+        "neopixel": "*"
     },
     "files": [
         "README.md",
-        "main.ts"
+        "main.ts",
+        "Tinybit.ts"
     ],
     "testFiles": [
         "test.ts"
     ],
     "public": false,
-    "additionalFilePaths": []
+    "preferredEditor": "tsprj",
+    "installedVersion": "workspace:84a6acdb-a9da-4521-0b7d-dcc27908b25b"
 }
