@@ -1,4 +1,3 @@
-//////////////////////////////////////////////////////////////
 /*
 Copyright 2019 GHIElectronics, LLC
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,18 +10,20 @@ distributed under the License is distributed on an "AS IS" BASIS,
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-//////////////////////////////////////////////////////////////
+
 //% weight=10 color=#006400 icon="\uf1b9" block="Tinybit"
 //% groups='["Motors", "Distance Sensor", "Line Reader","Lights", "Music", "Microphone"]'
 
-let SmartStrip: neopixel.Strip;
-
 namespace Tinybit {
+    let SmartStrip: neopixel.Strip;
+    
     const alreadyInit = 0
     const I2C_ADDRESS = 0x01
     const MOTOR = 0x02
     const LeftLineSensorValue = pins.digitalReadPin(DigitalPin.P13)
     const RightLineSensorValue = pins.digitalReadPin(DigitalPin.P14)
+    const UltrasonicSensorTrigPin = DigitalPin.P16;
+    const UltrasonicSensorEchoPin = DigitalPin.P15;
 
     export enum Motors {
         //% blockId="LeftMotor" block="LeftMotor"
@@ -89,13 +90,13 @@ namespace Tinybit {
     //% speed.defl=100
     //% index.fieldEditor="gridpicker" index.fieldOptions.columns=2
     //% dir.fieldEditor="gridpicker" dir.fieldOptions.columns=2
-    export function ControlMotors(WhichMotor: Motors, dir: direction, speed: number): void {
+    export function setMotorSpeed(which: Motors, dir: direction, speed: number): void {
         speed = Math.round(speed * 2.55);
         let buf = pins.createBuffer(5);
 
         buf[0] = MOTOR;
 
-        if (WhichMotor == Motors.LeftMotor) {
+        if (which == Motors.LeftMotor) {
             if (dir == direction.forward) {
                 buf[3] = speed;
             }
@@ -103,7 +104,7 @@ namespace Tinybit {
                 buf[4] = speed;
             }
         }
-        else if (WhichMotor == Motors.RightMotor) {
+        else if (which == Motors.RightMotor) {
             if (dir == direction.forward) {
                 buf[1] = speed;
             }
@@ -112,7 +113,7 @@ namespace Tinybit {
             }
 
         }
-        else if (WhichMotor == Motors.BothMotors) {
+        else if (which == Motors.BothMotors) {
             if (dir == direction.forward) {
                 buf[1] = speed;
                 buf[2] = 0;
@@ -135,7 +136,7 @@ namespace Tinybit {
     //% group="Motors"
     //% blockId=motorStop block="Stop motors"
     //% motors.fieldEditor="gridpicker" motors.fieldOptions.columns=2
-    export function motorStop(): void {
+    export function stopMotors(): void {
         let buf = pins.createBuffer(5);
 
         buf[0] = MOTOR;
@@ -155,23 +156,19 @@ namespace Tinybit {
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
     export function ReadUltrasonicSensor(): number {
         // send pulse
-        pins.setPull(DigitalPin.P16, PinPullMode.PullNone);
-        pins.digitalWritePin(DigitalPin.P16, 0);
+        pins.setPull(UltrasonicSensorTrigPin, PinPullMode.PullNone);
+        pins.digitalWritePin(UltrasonicSensorTrigPin, 0);
         control.waitMicros(2);
-        pins.digitalWritePin(DigitalPin.P16, 1);
+        pins.digitalWritePin(UltrasonicSensorTrigPin, 1);
         control.waitMicros(15);
-        pins.digitalWritePin(DigitalPin.P16, 0);
+        pins.digitalWritePin(UltrasonicSensorTrigPin, 0);
 
         // read pulse
-        pins.setPull(DigitalPin.P15, PinPullMode.PullUp);
+        pins.setPull(UltrasonicSensorEchoPin, PinPullMode.PullUp);
 
-        let d = pins.pulseIn(DigitalPin.P15, PulseValue.High, 21000);
+        let d = pins.pulseIn(UltrasonicSensorEchoPin, PulseValue.High, 21000);
 
         d = Math.round(d / 42);
-
-        console.log("Distance: " + d);
-
-        basic.pause(50)
 
         return d;
     }
@@ -210,7 +207,7 @@ namespace Tinybit {
     //% b.min=0 b.max=100
     //% group="Lights"
     //% color="#006400"
-    export function rgblight(r: number, g: number, b: number): void {
+    export function setLEDColor(r: number, g: number, b: number): void {
         //scaling since 255 wont mean anything to a teacher/student 
         //User sees a value of 100 while program sees the value 255
         r *= 2.55;
@@ -229,7 +226,7 @@ namespace Tinybit {
     //% blockId=rgblightoff block="Turn off headlights"
     //% group="Lights"
     //% color="#006400"
-    export function rgblightoff(): void {
+    export function setLEDOff(): void {
         setPwmRGB(0, 0, 0)
     }
 
@@ -239,10 +236,9 @@ namespace Tinybit {
     //% color="#006400"
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
     //% group="Lights"
-    export function RGB_Neopixel(): neopixel.Strip {
-        if (SmartStrip === null || SmartStrip === undefined) {
-            SmartStrip = neopixel.create(DigitalPin.P12, 2, NeoPixelMode.RGB);
-        }
+    export function ControlCarNeopixels(): neopixel.Strip {
+        SMART_STRIP !== null && SMART_STRIP !== undefined ? SMART_STRIP : (SMART_STRIP = neopixel.create(DigitalPin.P12, 2, NeoPixelMode.RGB));
+
         return SmartStrip;
     }
 
@@ -252,7 +248,7 @@ namespace Tinybit {
     //% color="#006400"
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
     //% group="Music"
-    export function Music_Car(melody: Melodies): void {
+    export function playMelody(melody: Melodies): void {
         music.beginMelody(music.builtInMelody(melody), MelodyOptions.Once);
     }
 
@@ -261,7 +257,7 @@ namespace Tinybit {
     //% blockGap=10
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=12
     //% group="Microphone"
-    export function Read_Voice_Sensor(): boolean {
+    export function readVoiceSensor(): boolean {
         //pins.setPull(DigitalPin.P1, PinPullMode.PullUp);
         let SoundValue = pins.analogReadPin(AnalogPin.P1);
         //Sound detected
