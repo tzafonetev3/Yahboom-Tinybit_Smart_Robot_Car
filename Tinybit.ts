@@ -4,7 +4,7 @@ const MOTOR = 0x02
 const RGB = 0x01
 
 //% weight=10 color=#006400 icon="\uf1b9" block="Tinybit"
-//% groups='["Motors", "Distance Sensor", "Line Reader","Headlights"]'
+
 
 namespace Tinybit {
     export enum Motors {
